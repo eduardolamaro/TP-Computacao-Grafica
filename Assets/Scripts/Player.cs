@@ -4,58 +4,39 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    CharacterController controller;
+    public CharacterController controller;
+    public Transform groundCheck;
+    
+    public float speed = 3f;
+    public float gravity = -9.81f;
+    public float groundDistace = 0.4f;
+    public float jumpHeight = 1f;
 
-    Vector3 forward;
-    Vector3 strafe;
-    Vector3 vertical;
+    public LayerMask groundMask;
+   
+    Vector3 velocity;
 
-    float forwardSpeed = 5f;
-    float strafeSpeed = 5f;
-
-    float gravity;
-    float jumpSpeed;
-    float maxJumpHeight = 2f;
-    float timeToMaxHeight = 0.5f;
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        controller = GetComponent<CharacterController>();
-
-        gravity = (-2 * maxJumpHeight) / (timeToMaxHeight * timeToMaxHeight);
-        jumpSpeed = (2 * maxJumpHeight) / timeToMaxHeight;
-
-    }
-
-    // Update is called once per frame
+    bool isGrounded;
+   
     void Update()
     {
-        float forwardInput = Input.GetAxisRaw("Vertical");
-        float strafeInput = Input.GetAxisRaw("Horizontal");
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistace, groundMask);
+        
+        if (isGrounded && velocity.y < 0){
+            velocity.y = -2f;
+        }  
 
-        // force = input * speed * direction
-        forward = forwardInput * forwardSpeed * transform.forward;
-        strafe = strafeInput * strafeSpeed * transform.right;
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
 
-        vertical += gravity * Time.deltaTime * Vector3.up;
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * speed * Time.deltaTime); 
 
-        if (controller.isGrounded)
-        {
-            vertical = Vector3.down; 
+        if (Input.GetButtonDown("Jump") && isGrounded){
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && controller.isGrounded){
-            vertical = jumpSpeed * Vector3.up; 
-        }
-
-        if (vertical.y > 0 && (controller.collisionFlags & CollisionFlags.Above) != 0)
-        {
-            vertical = Vector3.zero;
-        }
-
-        Vector3 finalVelocity = forward + strafe + vertical;
-
-        controller.Move(finalVelocity * Time.deltaTime);
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
     }
 }
